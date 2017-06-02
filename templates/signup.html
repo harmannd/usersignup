@@ -3,36 +3,61 @@
 <head>
     <title>User Signup</title>
 </head>
+
+<style type="text/css">
+    .container {
+        display: flex;
+        justify-content: flex-start;
+        flex-direction: row;
+        padding-bottom: 5px;
+    }
+
+    label {
+        width: 120px;
+        text-align: right;
+        padding-right: 5px;
+    }
+
+    .error {
+        color: red;
+        padding-left: 10px;
+    }
+
+    input[type=text], input[type=password] {
+        border-width: 1px;
+    }
+
+    input[type=submit] {
+        max-width: 80px;
+    }
+</style>
+
 <body>
     <h2>Signup</h2>
     <form method="post">
-        <label>Username
+        <div class="container">
+            <label>Username</label>
             <input type="text" name="username" value={{username}}>
-            <span style="color: red">{{error_username}}</span>
-        </label>
+            <div class="error">{{error_username}}</div>
+        </div>
 
-        <br>
-
-        <label>Password
+        <div class="container">
+            <label>Password</label>
             <input type="password" name="password">
-            <span style="color: red"> {{error_password}}</span>
-        </label>
+            <div class="error"> {{error_password}}</div>
+        </div>
 
-        <br>
-
-        <label>Verify Password
+        <div class="container">
+            <label>Verify Password</label>
             <input type="password" name="verify">
-            <span style="color: red" > {{error_verify_password}}</span>
-        </label>
+            <div class="error"> {{error_verify_password}}</div>
+        </div>
 
-        <br>
-
-        <label>Email (optional)
+        <div class="container">
+            <label>Email (optional)</label>
             <input type="text" name="email">
-            <span style="color: red"> {{error_email}}</span>
-        </label>
-
-        <br>
+            <div class="error"> {{error_email}}</div>
+        </div>
 
         <input type="submit">
     </form>
