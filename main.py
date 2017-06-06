@@ -114,7 +114,7 @@ class MainPage(Handler):
             u = User(name = username, pw_hash = pw_hash, email = email)
             u.put()
 
-            self.response.headers.add_header('Set-Cookie', 'user_id={}'.format(make_secure_val(str(u.key().id()))))
+            self.response.headers.add_header('Set-Cookie', 'user_id={}; Path=/'.format(make_secure_val(str(u.key().id()))))
             self.redirect('/welcome')
 
 class WelcomeHandler(Handler):
@@ -139,14 +139,14 @@ class LoginHandler(Handler):
         if username and password and len(users) > 0:
             for user in users:
                 if valid_pw(username, password, user.pw_hash):
-                    self.response.headers.add_header('Set-Cookie', 'user_id={}'.format(make_secure_val(str(user.key().id()))))
+                    self.response.headers.add_header('Set-Cookie', 'user_id={}; Path=/'.format(make_secure_val(str(user.key().id()))))
                     self.redirect('/welcome')
         else:
             self.render('login.html', invalid = "Invalid login")
 
 class LogoutHandler(Handler):
     def get(self):
-        self.response.headers.add_header('Set-Cookie', 'user_id=')
+        self.response.headers.add_header('Set-Cookie', 'user_id=; Path=/')
         self.redirect('/signup')
 
 
