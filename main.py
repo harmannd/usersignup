@@ -129,9 +129,15 @@ class LoginHandler(Handler):
         self.render('login.html')
 
     def post(self):
-        username = self.request.cookies.get('user_id').split('|')[0]
-        if username == self.request.get('username'):
-            self.render('welcome.html', username = username)
+        username = self.request.get('username')
+        password = self.request.get('password')
+
+        user = db.GqlQuery("SELECT * FROM User "
+                           "WHERE name = :1", username)[0]
+        if valid_pw(username, password, user.pw_hash):
+            self.response.headers.add_header('Set-Cookie', 'user_id={}'.format(make_secure_val(str(user.key().id()))))
+            self.redirect('/welcome')
+
 
 app = webapp2.WSGIApplication([('/signup', MainPage),
                                ('/welcome', WelcomeHandler),
