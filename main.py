@@ -3,27 +3,20 @@ import jinja2
 import webapp2
 import re
 import hmac
+import hashlib
+import random
+
+from string import letters
+from google.appengine.ext import db
 
 SECRET = 'imsosecret'
+USER_RE = re.compile(r"^[a-zA-Z0-9_-]{3,20}$")
+PASSWORD_RE = re.compile(r"^.{3,20}$")
+EMAIL_RE = re.compile(r"^[\S]+@[\S]+.[\S]+$")
 
 template_dir = os.path.join(os.path.dirname(__file__), 'templates')
 jinja_env = jinja2.Environment(loader = jinja2.FileSystemLoader(template_dir),
                                autoescape = True)
-
-def hash_str(s):
-    return hmac.new(SECRET, s).hexdigest()
-
-def make_secure_val(s):
-    return "{}|{}".format(s, hash_str(s))
-
-def check_secure_val(h):
-    val = h.split('|')[0]
-    if h == make_secure_val(val):
-        return val
-
-USER_RE = re.compile(r"^[a-zA-Z0-9_-]{3,20}$")
-PASSWORD_RE = re.compile(r"^.{3,20}$")
-EMAIL_RE = re.compile(r"^[\S]+@[\S]+.[\S]+$")
 
 def valid_username(username):
     return USER_RE.match(username)
@@ -36,6 +29,43 @@ def valid_email(email):
         return True
     else:
         return EMAIL_RE.match(email)
+
+
+
+
+
+def make_secure_val(val):
+    return "{}|{}".format(val, hmac.new(SECRET, val).hexdigest())
+
+def check_secure_val(secure_val):
+    val = secure_val.split('|')[0]
+    if secure_val == make_secure_val(val):
+        return val
+
+
+
+
+def make_salt():
+    return ''.join(random.choice(letters) for x in xrange(5))
+
+def make_pw_hash(name, pw, salt = None):
+    if not salt:
+        salt = make_salt()
+    hexhash = hashlib.sha256(name + pw + salt).hexdigest()
+    return '{},{}'.format(hexhash, salt)
+
+def valid_pw(name, password, hexhash_salt):
+    salt = hexhash_salt.split(',')[1]
+    return hexhash_salt == make_pw_hash(name, password, salt)
+
+
+
+
+
+class User(db.Model):
+    name = db.StringProperty(required = True)
+    pw_hash = db.StringProperty(required = True)
+    email = db.StringProperty()
 
 class Handler(webapp2.RequestHandler):
     def write(self, *a, **kw):
@@ -80,16 +110,30 @@ class MainPage(Handler):
         if error:
             self.render('signup.html', **params)
         else:
-            self.response.headers.add_header('Set-Cookie', 'user_id={}'.format(make_secure_val(username)))
-            self.redirect('/welcome')
+            pw_hash = make_pw_hash(username, password)
+            u = User(name = username, pw_hash = pw_hash, email = email)
+            u.put()
 
+            self.response.headers.add_header('Set-Cookie', 'user_id={}'.format(make_secure_val(str(u.key().id()))))
+            self.redirect('/welcome')
 
 class WelcomeHandler(Handler):
     def get(self):
-        username = self.request.cookies.get('user_id').split('|')[0]
+        user_id = self.request.cookies.get('user_id').split('|')[0]
+        username = User.get_by_id(int(user_id)).name
+
         self.render('welcome.html', username = username)
 
+class LoginHandler(Handler):
+    def get(self):
+        self.render('login.html')
+
+    def post(self):
+        username = self.request.cookies.get('user_id').split('|')[0]
+        if username == self.request.get('username'):
+            self.render('welcome.html', username = username)
 
 app = webapp2.WSGIApplication([('/signup', MainPage),
-                               ('/welcome', WelcomeHandler)],
+                               ('/welcome', WelcomeHandler),
+                               ('/login', LoginHandler)],
                                 debug=True)

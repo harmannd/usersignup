@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>User Login</title>
+</head>
+
+<style type="text/css">
+    .container {
+        display: flex;
+        justify-content: flex-start;
+        flex-direction: row;
+        padding-bottom: 5px;
+    }
+
+    label {
+        width: 80px;
+        text-align: right;
+        padding-right: 5px;
+    }
+
+    .error {
+        color: red;
+        padding-left: 10px;
+    }
+
+    input[type=text], input[type=password] {
+        border-width: 1px;
+    }
+
+    input[type=submit] {
+        max-width: 80px;
+    }
+</style>
+
+<body>
+    <h2>Login</h2>
+    <form method="post">
+        <div class="container">
+            <label>Username</label>
+            <input type="text" name="username" value={{username}}>
+        </div>
+
+        <div class="container">
+            <label>Password</label>
+            <input type="password" name="password">
+        </div>
+
+        <div class="error">{{invalid}}</div>
+        <br>
+
+        <input type="submit">
+    </form>
+</body>
+</html>
