@@ -120,9 +120,11 @@ class MainPage(Handler):
 class WelcomeHandler(Handler):
     def get(self):
         user_id = self.request.cookies.get('user_id').split('|')[0]
-        username = User.get_by_id(int(user_id)).name
-
-        self.render('welcome.html', username = username)
+        if user_id:
+            username = User.get_by_id(int(user_id)).name
+            self.render('welcome.html', username = username)
+        else:
+            self.redirect('/signup')
 
 class LoginHandler(Handler):
     def get(self):
@@ -131,15 +133,25 @@ class LoginHandler(Handler):
     def post(self):
         username = self.request.get('username')
         password = self.request.get('password')
+        users = db.GqlQuery("SELECT * FROM User "
+                           "WHERE name = :1", username).fetch(limit = None)
 
-        user = db.GqlQuery("SELECT * FROM User "
-                           "WHERE name = :1", username)[0]
-        if valid_pw(username, password, user.pw_hash):
-            self.response.headers.add_header('Set-Cookie', 'user_id={}'.format(make_secure_val(str(user.key().id()))))
-            self.redirect('/welcome')
+        if username and password and len(users) > 0:
+            for user in users:
+                if valid_pw(username, password, user.pw_hash):
+                    self.response.headers.add_header('Set-Cookie', 'user_id={}'.format(make_secure_val(str(user.key().id()))))
+                    self.redirect('/welcome')
+        else:
+            self.render('login.html', invalid = "Invalid login")
+
+class LogoutHandler(Handler):
+    def get(self):
+        self.response.headers.add_header('Set-Cookie', 'user_id=')
+        self.redirect('/signup')
 
 
 app = webapp2.WSGIApplication([('/signup', MainPage),
                                ('/welcome', WelcomeHandler),
-                               ('/login', LoginHandler)],
+                               ('/login', LoginHandler),
+                               ('/logout', LogoutHandler)],
                                 debug=True)
